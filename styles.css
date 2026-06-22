@@ -1,27 +1,35 @@
 :root {
-  --bg: #f6f8fb;
+  --bg: #f3f6f8;
   --panel: #ffffff;
-  --text: #17212b;
-  --muted: #667280;
-  --line: #dce3ea;
-  --soft: #eef3f7;
-  --green: #138a63;
-  --green-bg: #e8f6f0;
-  --blue: #1769aa;
-  --blue-bg: #e8f1fb;
+  --text: #10202c;
+  --muted: #627181;
+  --line: #d8e1e8;
+  --soft: #edf3f6;
+  --green: #0f7b5c;
+  --green-bg: #e7f5ee;
+  --blue: #185fa7;
+  --blue-bg: #e7f0fb;
   --red: #b42318;
   --red-bg: #fff0ed;
-  --amber: #8a5a00;
-  --amber-bg: #fff7df;
+  --amber: #9a6400;
+  --amber-bg: #fff4d7;
+  --ink: #102318;
+  --shadow: 0 18px 48px rgba(17, 34, 46, 0.12);
 }
 
 * {
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    linear-gradient(180deg, #e8f0e7 0, transparent 260px),
+    var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 15px;
@@ -38,7 +46,7 @@ textarea {
 button {
   min-height: 40px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
@@ -46,8 +54,8 @@ button {
 }
 
 button.primary {
-  border-color: var(--green);
-  background: var(--green);
+  border-color: #0d6f52;
+  background: #0d6f52;
   color: white;
   font-weight: 700;
 }
@@ -55,6 +63,11 @@ button.primary {
 button.secondary {
   border-color: var(--blue);
   color: var(--blue);
+}
+
+button.danger {
+  border-color: var(--red);
+  color: var(--red);
 }
 
 button:disabled {
@@ -68,7 +81,7 @@ textarea {
   width: 100%;
   min-height: 40px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: #fff;
   color: var(--text);
   padding: 9px 11px;
@@ -83,9 +96,9 @@ textarea {
 }
 
 .app-shell {
-  max-width: 1180px;
+  max-width: 1248px;
   margin: 0 auto;
-  padding: 18px;
+  padding: 22px 18px 28px;
 }
 
 .topbar {
@@ -93,7 +106,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0 18px;
+  padding: 8px 0 20px;
 }
 
 .brand {
@@ -107,15 +120,16 @@ textarea {
   width: 62px;
   height: 36px;
   object-fit: cover;
-  border-radius: 5px;
+  border-radius: 6px;
   border: 1px solid var(--line);
   background: #fff;
 }
 
 .brand h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.1;
+  color: var(--ink);
 }
 
 .brand p {
@@ -134,9 +148,20 @@ textarea {
   color: var(--text);
   text-decoration: none;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   padding: 8px 11px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.link-button {
+  color: var(--blue);
+  text-decoration: none;
+  border: 1px solid var(--blue);
+  border-radius: 7px;
+  padding: 7px 10px;
   background: #fff;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .toolbar {
@@ -144,7 +169,11 @@ textarea {
   align-items: end;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 15px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(216, 225, 232, 0.8);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .field {
@@ -188,6 +217,7 @@ textarea {
   display: grid;
   gap: 7px;
   min-height: 96px;
+  box-shadow: 0 10px 26px rgba(22, 38, 54, 0.05);
 }
 
 .metric .label {
@@ -196,7 +226,7 @@ textarea {
 }
 
 .metric .value {
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 800;
 }
 
@@ -227,7 +257,7 @@ textarea {
 
 .panel-header h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .panel-body {
@@ -308,6 +338,42 @@ th.num {
   color: #314252;
 }
 
+.notice.compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.check-field input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.row-actions button {
+  min-height: 32px;
+  padding: 5px 9px;
+}
+
 .result {
   margin-top: 12px;
   white-space: pre-wrap;
@@ -328,6 +394,215 @@ th.num {
   text-align: center;
 }
 
+.hero-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.65fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.payment-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+  min-height: 310px;
+  padding: 18px;
+  border: 1px solid #b9d4c5;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(236, 248, 240, 0.96), rgba(255, 255, 255, 0.94)),
+    #fff;
+  box-shadow: var(--shadow);
+}
+
+.payment-main {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.member-picker {
+  max-width: 460px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #48606f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.debt-amount {
+  color: #a51f16;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.debt-amount.paid {
+  color: var(--green);
+}
+
+.payment-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.quick-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payment-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0;
+}
+
+.payment-details div {
+  min-width: 0;
+  border: 1px solid #d7e5dc;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 10px;
+}
+
+.payment-details dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.payment-details dd {
+  margin: 4px 0 0;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.qr-box {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.qr-box img {
+  width: 100%;
+  max-width: 220px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qr-placeholder {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-height: 220px;
+  place-content: center;
+  border: 1px dashed #9ab5a5;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--muted);
+  padding: 16px;
+  text-align: center;
+}
+
+.qr-placeholder strong {
+  color: var(--text);
+}
+
+.fund-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.overview-card {
+  display: grid;
+  gap: 5px;
+  min-height: 96px;
+  align-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 14px;
+  box-shadow: 0 10px 26px rgba(22, 38, 54, 0.05);
+}
+
+.overview-card.debt {
+  border-color: #f0c2bc;
+  background: #fff2ef;
+}
+
+.overview-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.overview-card strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.overview-card small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dashboard-metrics,
+.dashboard-content {
+  margin-top: 14px;
+}
+
+.balance-cards {
+  display: none;
+}
+
+.balance-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.balance-card strong,
+.balance-card span {
+  display: block;
+}
+
+.balance-card span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.balance-card-amount {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.balance-card-amount b {
+  color: var(--red);
+  font-size: 18px;
+}
+
+.balance-card.is-paid .balance-card-amount b {
+  color: var(--green);
+}
+
+.balance-card-amount button {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 13px;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     padding: 12px;
@@ -339,10 +614,47 @@ th.num {
     flex-direction: column;
   }
 
+  .topbar {
+    gap: 12px;
+  }
+
   .summary-grid,
   .two-col,
-  .form-grid {
+  .form-grid,
+  .hero-dashboard,
+  .payment-panel {
     grid-template-columns: 1fr;
+  }
+
+  .payment-panel {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .payment-details {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-box {
+    order: -1;
+  }
+
+  .qr-box img,
+  .qr-placeholder {
+    max-width: none;
+    min-height: 168px;
+  }
+
+  .fund-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .balance-cards {
+    display: grid;
   }
 
   .toolbar .field {
@@ -355,5 +667,9 @@ th.num {
 
   .metric .value {
     font-size: 21px;
+  }
+
+  .debt-amount {
+    font-size: 34px;
   }
 }

@@ -29,6 +29,15 @@ function findMember(input, members) {
   return members.find((member) => normalizeName(member.code) === key || normalizeName(member.name) === key) || null;
 }
 
+function findCategory(item, categories, type) {
+  const id = String(item.categoryId || item.category_id || "").trim();
+  if (id) return categories.find((category) => category.id === id && category.type === type) || null;
+  const name = String(item.category || "").trim();
+  if (!name) return null;
+  const key = normalizeName(name);
+  return categories.find((category) => category.type === type && normalizeName(category.name) === key) || null;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 
@@ -36,7 +45,10 @@ module.exports = async function handler(req, res) {
     requireSecret(req, "ACCOUNTANT_KEY");
     const payload = bodyOf(req);
     const items = Array.isArray(payload.items) ? payload.items : [payload];
-    const members = await supabase("members?select=id,code,name");
+    const [members, categories] = await Promise.all([
+      supabase("members?select=id,code,name"),
+      supabase("transaction_categories?select=*&active=eq.true"),
+    ]);
 
     const rows = items.map((item) => {
       const type = normalizeType(item.type);
@@ -45,9 +57,16 @@ module.exports = async function handler(req, res) {
         err.statusCode = 400;
         throw err;
       }
-      const amount = asNumber(item.amount);
+      const category = findCategory(item, categories, type);
+      const hasAmount = item.amount !== undefined && item.amount !== null && item.amount !== "";
+      const amount = hasAmount ? asNumber(item.amount) : asNumber(category?.default_amount);
       if (amount <= 0) {
         const err = new Error("Số tiền phải lớn hơn 0");
+        err.statusCode = 400;
+        throw err;
+      }
+      if ((item.categoryId || item.category_id) && !category) {
+        const err = new Error("Không tìm thấy hạng mục thu chi");
         err.statusCode = 400;
         throw err;
       }
@@ -56,7 +75,7 @@ module.exports = async function handler(req, res) {
         transaction_date: item.date || item.transactionDate || today(),
         type,
         member_id: member?.id || null,
-        category: item.category || (type === "income" ? "Đóng tiền" : "Chi phí"),
+        category: category?.name || item.category || (type === "income" ? "Đóng tiền" : "Chi phí"),
         amount,
         note: item.note || "",
       };

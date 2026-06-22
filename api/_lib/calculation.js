@@ -5,6 +5,11 @@ function settingNumber(settings, key, fallback) {
   return asNumber(item?.value, fallback);
 }
 
+function settingText(settings, key, fallback = "") {
+  const item = settings.find((row) => row.key === key);
+  return String(item?.value ?? fallback).trim();
+}
+
 async function loadMonthData(monthParam) {
   const bounds = monthBounds(monthParam);
   const [settings, members, sessions, transactions] = await Promise.all([
@@ -92,6 +97,12 @@ function calculateSummary(data) {
 
   return {
     month: bounds.month,
+    payment: {
+      bankCode: settingText(settings, "bank_code"),
+      bankAccount: settingText(settings, "bank_account"),
+      bankOwner: settingText(settings, "bank_owner"),
+      transferPrefix: settingText(settings, "transfer_prefix", "CAULONG"),
+    },
     totals: {
       totalDue,
       totalPaid,
@@ -117,4 +128,5 @@ module.exports = {
   calculateSummary,
   loadMonthData,
   settingNumber,
+  settingText,
 };

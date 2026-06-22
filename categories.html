@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hạng mục tiền đội cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Hạng mục tiền</h1>
+            <p>Cấu hình khoản thu/chi và số tiền mặc định cho kế toán</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/admin/members">Thành viên</a>
+          <a href="/admin/setup">Cấu hình</a>
+          <a href="/ke-toan">Kế toán</a>
+        </nav>
+      </header>
+
+      <section class="notice">
+        Ví dụ: tạo hạng mục Chi - Tiền sân - 400000. Khi kế toán chọn hạng mục này, ô số tiền sẽ tự điền 400.000đ.
+      </section>
+
+      <section class="grid two-col" style="margin-top:12px">
+        <form id="category-form" class="panel">
+          <div class="panel-header"><h2>Thông tin hạng mục</h2></div>
+          <div class="panel-body form-grid">
+            <input id="category-id" type="hidden" />
+            <div class="field full">
+              <label for="category-key">Admin key</label>
+              <input id="category-key" type="password" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="category-type">Loại</label>
+              <select id="category-type" required>
+                <option value="expense">Chi</option>
+                <option value="income">Thu</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="category-name">Tên hạng mục</label>
+              <input id="category-name" required placeholder="Tiền sân" />
+            </div>
+            <div class="field">
+              <label for="category-amount">Số tiền mặc định</label>
+              <input id="category-amount" type="number" min="0" step="1000" required />
+            </div>
+            <div class="field">
+              <label for="category-sort">Thứ tự</label>
+              <input id="category-sort" type="number" step="1" value="100" required />
+            </div>
+            <div class="field full">
+              <label for="category-note">Ghi chú</label>
+              <input id="category-note" />
+            </div>
+            <label class="check-field full">
+              <input id="category-active" type="checkbox" checked />
+              <span>Đang dùng</span>
+            </label>
+            <div class="actions full">
+              <button id="load-categories" class="secondary" type="button">Tải hạng mục</button>
+              <button id="new-category" type="button">Thêm mới</button>
+              <button class="primary" type="submit">Lưu</button>
+              <button id="delete-category" class="danger" type="button" disabled>Xóa</button>
+            </div>
+          </div>
+        </form>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="category-result" class="result">Chưa có dữ liệu.</div>
+          </div>
+        </section>
+
+        <section class="panel" style="grid-column:1 / -1">
+          <div class="panel-header">
+            <h2>Danh sách hạng mục</h2>
+            <span id="category-count" class="muted">0 hạng mục</span>
+          </div>
+          <div id="categories-table" class="table-wrap"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

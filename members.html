@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thành viên đội cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Thành viên</h1>
+            <p>Thêm, sửa, xóa mềm thành viên đang chơi</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/admin/setup">Cấu hình</a>
+          <a href="/admin/categories">Hạng mục tiền</a>
+          <a href="/ke-toan">Kế toán</a>
+        </nav>
+      </header>
+
+      <section class="notice">
+        Dùng admin key. Bấm xóa sẽ chuyển thành viên sang trạng thái không hoạt động để giữ lịch sử các buổi và thu chi cũ.
+      </section>
+
+      <section class="grid two-col" style="margin-top:12px">
+        <form id="member-form" class="panel">
+          <div class="panel-header"><h2>Thông tin thành viên</h2></div>
+          <div class="panel-body form-grid">
+            <input id="member-id" type="hidden" />
+            <div class="field full">
+              <label for="member-key">Admin key</label>
+              <input id="member-key" type="password" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="member-code">Mã</label>
+              <input id="member-code" required placeholder="TV01" />
+            </div>
+            <div class="field">
+              <label for="member-name">Tên</label>
+              <input id="member-name" required placeholder="Nguyễn Văn A" />
+            </div>
+            <div class="field">
+              <label for="member-gender">Giới tính</label>
+              <select id="member-gender" required>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="member-type">Loại đóng</label>
+              <select id="member-type" required>
+                <option value="monthly">Cố định tháng</option>
+                <option value="half_month">Cố định nửa tháng</option>
+                <option value="guest">Vãng lai</option>
+              </select>
+            </div>
+            <label class="check-field full">
+              <input id="member-active" type="checkbox" checked />
+              <span>Đang hoạt động</span>
+            </label>
+            <div class="actions full">
+              <button id="load-members" class="secondary" type="button">Tải danh sách</button>
+              <button id="new-member" type="button">Thêm mới</button>
+              <button class="primary" type="submit">Lưu</button>
+              <button id="delete-member" class="danger" type="button" disabled>Xóa</button>
+            </div>
+          </div>
+        </form>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="member-result" class="result">Chưa có dữ liệu.</div>
+          </div>
+        </section>
+
+        <section class="panel" style="grid-column:1 / -1">
+          <div class="panel-header">
+            <h2>Danh sách thành viên</h2>
+            <span id="member-count" class="muted">0 người</span>
+          </div>
+          <div id="members-table" class="table-wrap"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

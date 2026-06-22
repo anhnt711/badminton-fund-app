@@ -4,6 +4,18 @@ function formatMoney(value) {
   return `${money.format(Math.round(Number(value || 0)))}đ`;
 }
 
+function plainTransferText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^a-zA-Z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
@@ -33,8 +45,25 @@ async function requestJson(url, options = {}) {
   return payload;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function selected(value, current) {
+  return value === current ? "selected" : "";
+}
+
+function copyAttr(value) {
+  return encodeURIComponent(String(value ?? ""));
+}
+
 function renderError(container, error) {
-  container.innerHTML = `<div class="empty">Không tải được dữ liệu: ${error.message}</div>`;
+  container.innerHTML = `<div class="empty">Không tải được dữ liệu: ${escapeHtml(error.message)}</div>`;
 }
 
 async function loadDashboard() {
@@ -45,26 +74,43 @@ async function loadDashboard() {
   try {
     root.innerHTML = `<div class="empty">Đang tải...</div>`;
     const payload = await requestJson(`/api/public-data?month=${monthInput.value}`);
-    const { totals, balances, sessions, transactions } = payload.data;
+    const { totals, balances, sessions, transactions, payment } = payload.data;
+    const selectedId = localStorage.getItem("badminton_selected_member");
+    const selectedMember = balances.find((row) => row.id === selectedId) || balances.find((row) => row.balance > 0) || balances[0];
     root.innerHTML = `
-      <section class="grid summary-grid">
+      <section class="hero-dashboard">
+        ${memberPaymentPanel(selectedMember, balances, payment, monthInput.value)}
+        <div class="fund-overview">
+          <div class="overview-card debt">
+            <span>Còn phải thu</span>
+            <strong>${formatMoney(totals.memberDebt)}</strong>
+            <small>${totals.debtors} người còn nợ</small>
+          </div>
+          <div class="overview-card">
+            <span>Đã thu</span>
+            <strong>${formatMoney(totals.totalPaid)}</strong>
+            <small>Trong tháng đang xem</small>
+          </div>
+          <div class="overview-card">
+            <span>Quỹ tháng này</span>
+            <strong>${formatMoney(totals.fundBalance)}</strong>
+            <small>Thu - chi</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid summary-grid dashboard-metrics">
         <div class="metric blue"><div class="label">Tổng phải thu</div><div class="value">${formatMoney(totals.totalDue)}</div><div class="muted">${totals.activeMembers} thành viên</div></div>
-        <div class="metric green"><div class="label">Đã thu</div><div class="value">${formatMoney(totals.totalPaid)}</div><div class="muted">Theo kế toán nhập</div></div>
-        <div class="metric red"><div class="label">Còn nợ</div><div class="value">${formatMoney(totals.memberDebt)}</div><div class="muted">${totals.debtors} người còn nợ</div></div>
-        <div class="metric amber"><div class="label">Quỹ hiện tại</div><div class="value">${formatMoney(totals.fundBalance)}</div><div class="muted">Thu - chi trong tháng</div></div>
-      </section>
-
-      <section class="grid summary-grid" style="margin-top:12px">
         <div class="metric"><div class="label">Tổng tiền kèo</div><div class="value">${formatMoney(totals.potDue)}</div><div class="muted">Từ dữ liệu buổi</div></div>
-        <div class="metric"><div class="label">Tiền nước đã mua</div><div class="value">${formatMoney(totals.potWaterExpense)}</div><div class="muted">Trừ vào tiền kèo</div></div>
-        <div class="metric"><div class="label">Kèo còn lại</div><div class="value">${formatMoney(totals.potRemaining)}</div><div class="muted">Kèo - nước - chi kèo khác</div></div>
-        <div class="metric"><div class="label">Số buổi</div><div class="value">${totals.sessions}</div><div class="muted">Trong tháng đang xem</div></div>
+        <div class="metric"><div class="label">Kèo còn lại</div><div class="value">${formatMoney(totals.potRemaining)}</div><div class="muted">Sau nước và chi kèo</div></div>
+        <div class="metric amber"><div class="label">Số buổi</div><div class="value">${totals.sessions}</div><div class="muted">Trong tháng đang xem</div></div>
       </section>
 
-      <section class="grid two-col" style="margin-top:12px">
+      <section class="grid two-col dashboard-content">
         <div class="panel">
           <div class="panel-header"><h2>Công nợ thành viên</h2><span class="muted">${balances.length} người</span></div>
-          <div class="table-wrap">${balanceTable(balances)}</div>
+          ${balanceCards(balances, payment, monthInput.value)}
+          <div class="table-wrap desktop-only">${balanceTable(balances)}</div>
         </div>
         <div class="grid">
           <div class="panel">
@@ -78,9 +124,134 @@ async function loadDashboard() {
         </div>
       </section>
     `;
+    bindDashboardActions(root);
   } catch (error) {
     renderError(root, error);
   }
+}
+
+function transferContent(row, payment, month) {
+  const prefix = payment?.transferPrefix || "CAULONG";
+  return plainTransferText(`${prefix} ${row?.code || ""} ${row?.name || ""} ${month}`);
+}
+
+function paymentQrUrl(row, payment, month) {
+  if (!row?.balance || !payment?.bankCode || !payment?.bankAccount) return "";
+  const amount = Math.max(0, Math.round(Number(row.balance || 0)));
+  const info = encodeURIComponent(transferContent(row, payment, month));
+  const owner = encodeURIComponent(payment.bankOwner || "");
+  return `https://img.vietqr.io/image/${encodeURIComponent(payment.bankCode)}-${encodeURIComponent(payment.bankAccount)}-compact2.png?amount=${amount}&addInfo=${info}&accountName=${owner}`;
+}
+
+function memberPaymentPanel(row, rows, payment, month) {
+  if (!rows.length) {
+    return `<div class="payment-panel"><div class="empty">Chưa có thành viên</div></div>`;
+  }
+  const debt = Math.max(0, Number(row?.balance || 0));
+  const content = transferContent(row, payment, month);
+  const accountReady = payment?.bankCode && payment?.bankAccount;
+  const qrUrl = paymentQrUrl(row, payment, month);
+  return `
+    <div class="payment-panel">
+      <div class="payment-main">
+        <div class="field member-picker">
+          <label for="member-select">Chọn tên của bạn</label>
+          <select id="member-select">
+            ${rows.map((item) => `<option value="${item.id}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} - còn nợ ${formatMoney(item.balance)}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <p class="eyebrow">Số tiền cần chuyển</p>
+          <div class="debt-amount ${debt > 0 ? "" : "paid"}">${formatMoney(debt)}</div>
+          <p class="payment-note">${debt > 0 ? "Copy số tiền và nội dung bên dưới khi chuyển khoản." : "Bạn đã hoàn tất công nợ tháng này."}</p>
+        </div>
+        <div class="quick-copy">
+          <button class="primary" type="button" data-copy="${copyAttr(debt)}">Copy số tiền</button>
+          <button type="button" data-copy="${copyAttr(content)}">Copy nội dung</button>
+          <button type="button" data-copy="${copyAttr(paymentInfoText(row, payment, month))}">Copy tất cả</button>
+        </div>
+        <dl class="payment-details">
+          <div><dt>Ngân hàng</dt><dd>${accountReady ? escapeHtml(payment.bankCode) : "Chưa cấu hình"}</dd></div>
+          <div><dt>Số TK</dt><dd>${payment?.bankAccount ? escapeHtml(payment.bankAccount) : "Chưa cấu hình"}</dd></div>
+          <div><dt>Chủ TK</dt><dd>${payment?.bankOwner ? escapeHtml(payment.bankOwner) : "Chưa cấu hình"}</dd></div>
+          <div><dt>Nội dung</dt><dd>${escapeHtml(content)}</dd></div>
+        </dl>
+      </div>
+      <div class="qr-box">
+        ${
+          qrUrl
+            ? `<img src="${qrUrl}" alt="QR chuyển khoản cho ${escapeHtml(row.name)}" />`
+            : `<div class="qr-placeholder"><strong>QR chuyển khoản</strong><span>Nhập mã ngân hàng và số tài khoản trong Cấu hình đội để hiện QR tự động.</span></div>`
+        }
+      </div>
+    </div>`;
+}
+
+function paymentInfoText(row, payment, month) {
+  return [
+    `So tien: ${Math.max(0, Math.round(Number(row?.balance || 0)))}`,
+    `Noi dung: ${transferContent(row, payment, month)}`,
+    payment?.bankCode ? `Ngan hang: ${payment.bankCode}` : "",
+    payment?.bankAccount ? `So TK: ${payment.bankAccount}` : "",
+    payment?.bankOwner ? `Chu TK: ${payment.bankOwner}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function balanceCards(rows, payment, month) {
+  if (!rows.length) return `<div class="empty">Chưa có thành viên</div>`;
+  return `
+    <div class="balance-cards">
+      ${rows
+        .map((row) => {
+          const debt = Math.max(0, Number(row.balance || 0));
+          return `
+            <article class="balance-card ${debt > 0 ? "has-debt" : "is-paid"}">
+              <div>
+                <strong>${escapeHtml(row.name)}</strong>
+                <span>${escapeHtml(row.code)} · ${memberType(row.membershipType)}</span>
+              </div>
+              <div class="balance-card-amount">
+                <b>${formatMoney(debt)}</b>
+                <button type="button" data-copy="${copyAttr(paymentInfoText(row, payment, month))}">${debt > 0 ? "Copy CK" : "Đã xong"}</button>
+              </div>
+            </article>`;
+        })
+        .join("")}
+    </div>`;
+}
+
+function bindDashboardActions(root) {
+  root.querySelector("#member-select")?.addEventListener("change", (event) => {
+    localStorage.setItem("badminton_selected_member", event.target.value);
+    loadDashboard();
+  });
+
+  root.querySelectorAll("button[data-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const text = decodeURIComponent(button.dataset.copy || "");
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const input = document.createElement("textarea");
+          input.value = text;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand("copy");
+          input.remove();
+        }
+        const original = button.textContent;
+        button.textContent = "Đã copy";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1200);
+      } catch (error) {
+        alert("Không copy được. Hãy sao chép thủ công.");
+      }
+    });
+  });
 }
 
 function balanceTable(rows) {
@@ -215,31 +386,106 @@ function initAccounting() {
   const form = document.querySelector("#accounting-form");
   if (!form) return;
   const keyInput = document.querySelector("#accountant-key");
+  const keyField = document.querySelector("#accountant-key-field");
+  const keyStatus = document.querySelector("#accountant-key-status");
+  const changeKey = document.querySelector("#change-accountant-key");
+  const typeInput = document.querySelector("#tx-type");
+  const categoryInput = document.querySelector("#tx-category");
+  const customCategoryInput = document.querySelector("#tx-category-custom");
+  const amountInput = document.querySelector("#tx-amount");
+  const categoryTable = document.querySelector("#accounting-categories");
   const result = document.querySelector("#result");
   keyInput.value = rememberKey("badminton_accountant_key");
   document.querySelector("#tx-date").value = new Date().toISOString().slice(0, 10);
+  let categories = [];
+
+  function effectiveKey() {
+    return keyInput.value || localStorage.getItem("badminton_accountant_key") || "";
+  }
+
+  function refreshKeyUi() {
+    const hasKey = Boolean(effectiveKey());
+    keyInput.required = !hasKey;
+    keyField.hidden = hasKey;
+    keyStatus.hidden = !hasKey;
+  }
+
+  function renderCategoryOptions() {
+    const currentType = typeInput.value === "Chi" ? "expense" : "income";
+    const rows = categories.filter((category) => category.type === currentType);
+    categoryInput.innerHTML = rows
+      .map(
+        (category) =>
+          `<option value="${category.id}" data-amount="${Number(category.default_amount || 0)}">${escapeHtml(category.name)}</option>`,
+      )
+      .concat(`<option value="__custom">Khác...</option>`)
+      .join("");
+    updateAmountFromCategory();
+  }
+
+  function updateAmountFromCategory() {
+    const option = categoryInput.selectedOptions[0];
+    const amount = Number(option?.dataset.amount || 0);
+    const isCustom = categoryInput.value === "__custom";
+    customCategoryInput.disabled = !isCustom;
+    customCategoryInput.required = isCustom;
+    if (!isCustom) customCategoryInput.value = "";
+    if (amount > 0) amountInput.value = amount;
+  }
+
+  async function loadAccountingCategories() {
+    const response = await requestJson("/api/transaction-categories");
+    categories = response.categories || [];
+    renderCategoryOptions();
+    categoryTable.innerHTML = transactionCategoryTable(categories.filter((category) => category.active));
+  }
+
+  refreshKeyUi();
+  loadAccountingCategories().catch((error) => {
+    categoryTable.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+  });
+
+  changeKey?.addEventListener("click", () => {
+    localStorage.removeItem("badminton_accountant_key");
+    keyInput.value = "";
+    refreshKeyUi();
+    keyInput.focus();
+  });
+
+  typeInput.addEventListener("change", renderCategoryOptions);
+  categoryInput.addEventListener("change", updateAmountFromCategory);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     result.textContent = "Đang lưu...";
-    localStorage.setItem("badminton_accountant_key", keyInput.value);
+    const key = effectiveKey();
+    if (!key) {
+      result.textContent = "Thiếu kế toán key. Mở link có key một lần hoặc nhập key tại ô trên.";
+      refreshKeyUi();
+      return;
+    }
+    localStorage.setItem("badminton_accountant_key", key);
     const data = Object.fromEntries(new FormData(form).entries());
+    const selectedCategory = categories.find((category) => category.id === data.categoryId);
     try {
-      const response = await requestJson(`/api/transactions?key=${encodeURIComponent(keyInput.value)}`, {
+      const response = await requestJson(`/api/transactions?key=${encodeURIComponent(key)}`, {
         method: "POST",
         body: JSON.stringify({
           date: data.date,
           type: data.type,
           member: data.member,
-          category: data.category,
+          categoryId: data.categoryId && data.categoryId !== "__custom" ? data.categoryId : undefined,
+          category: data.category || selectedCategory?.name,
           amount: Number(data.amount),
           note: data.note,
         }),
       });
       result.textContent = JSON.stringify(response, null, 2);
       form.reset();
-      keyInput.value = rememberKey("badminton_accountant_key");
+      keyInput.value = key;
       document.querySelector("#tx-date").value = new Date().toISOString().slice(0, 10);
+      refreshKeyUi();
+      renderCategoryOptions();
     } catch (error) {
       result.textContent = error.message;
     }
@@ -317,6 +563,10 @@ function initSetup() {
     document.querySelector("#half-month-fee").value = 250000;
     document.querySelector("#guest-male-fee").value = 70000;
     document.querySelector("#guest-female-fee").value = 50000;
+    document.querySelector("#bank-code").value = "";
+    document.querySelector("#bank-account").value = "";
+    document.querySelector("#bank-owner").value = "";
+    document.querySelector("#transfer-prefix").value = "CAULONG";
     document.querySelector("#members-csv").value = membersToCsv(
       Array.from({ length: 30 }, (_, index) => {
         const i = index + 1;
@@ -340,6 +590,10 @@ function initSetup() {
     document.querySelector("#half-month-fee").value = settingValue(response.settings, "half_month_fee", 250000);
     document.querySelector("#guest-male-fee").value = settingValue(response.settings, "guest_male_fee", 70000);
     document.querySelector("#guest-female-fee").value = settingValue(response.settings, "guest_female_fee", 50000);
+    document.querySelector("#bank-code").value = settingValue(response.settings, "bank_code", "");
+    document.querySelector("#bank-account").value = settingValue(response.settings, "bank_account", "");
+    document.querySelector("#bank-owner").value = settingValue(response.settings, "bank_owner", "");
+    document.querySelector("#transfer-prefix").value = settingValue(response.settings, "transfer_prefix", "CAULONG");
     document.querySelector("#members-csv").value = membersToCsv(response.members);
     result.textContent = JSON.stringify({ ok: true, loadedMembers: response.members.length }, null, 2);
   }
@@ -362,6 +616,10 @@ function initSetup() {
         { key: "half_month_fee", value: document.querySelector("#half-month-fee").value, description: "Cố định nửa tháng" },
         { key: "guest_male_fee", value: document.querySelector("#guest-male-fee").value, description: "Vãng lai nam mỗi buổi" },
         { key: "guest_female_fee", value: document.querySelector("#guest-female-fee").value, description: "Vãng lai nữ mỗi buổi" },
+        { key: "bank_code", value: document.querySelector("#bank-code").value, description: "Mã ngân hàng VietQR" },
+        { key: "bank_account", value: document.querySelector("#bank-account").value, description: "Số tài khoản nhận tiền" },
+        { key: "bank_owner", value: document.querySelector("#bank-owner").value, description: "Tên chủ tài khoản nhận tiền" },
+        { key: "transfer_prefix", value: document.querySelector("#transfer-prefix").value || "CAULONG", description: "Tiền tố nội dung chuyển khoản" },
       ],
       members: parseMembersCsv(document.querySelector("#members-csv").value),
     };
@@ -377,7 +635,304 @@ function initSetup() {
   });
 }
 
+function typeLabel(type) {
+  return type === "income" ? "Thu" : "Chi";
+}
+
+function transactionCategoryTable(rows) {
+  if (!rows.length) return `<div class="empty">Chưa có hạng mục tiền</div>`;
+  return `
+    <table style="min-width:620px">
+      <thead><tr><th>Loại</th><th>Hạng mục</th><th class="num">Mặc định</th><th>Trạng thái</th></tr></thead>
+      <tbody>${rows
+        .map(
+          (row) => `
+          <tr>
+            <td>${typeLabel(row.type)}</td>
+            <td>${escapeHtml(row.name)}</td>
+            <td class="num">${formatMoney(row.default_amount)}</td>
+            <td><span class="status ${row.active ? "ok" : "debt"}">${row.active ? "Đang dùng" : "Đã ẩn"}</span></td>
+          </tr>
+        `,
+        )
+        .join("")}</tbody>
+    </table>`;
+}
+
+function initMembersAdmin() {
+  const form = document.querySelector("#member-form");
+  if (!form) return;
+  const keyInput = document.querySelector("#member-key");
+  const result = document.querySelector("#member-result");
+  const table = document.querySelector("#members-table");
+  const count = document.querySelector("#member-count");
+  const deleteButton = document.querySelector("#delete-member");
+  let members = [];
+
+  keyInput.value = rememberKey("badminton_admin_key");
+
+  function key() {
+    return keyInput.value;
+  }
+
+  function clearForm() {
+    document.querySelector("#member-id").value = "";
+    document.querySelector("#member-code").value = "";
+    document.querySelector("#member-name").value = "";
+    document.querySelector("#member-gender").value = "Nam";
+    document.querySelector("#member-type").value = "monthly";
+    document.querySelector("#member-active").checked = true;
+    deleteButton.disabled = true;
+  }
+
+  function fillForm(member) {
+    document.querySelector("#member-id").value = member.id;
+    document.querySelector("#member-code").value = member.code || "";
+    document.querySelector("#member-name").value = member.name || "";
+    document.querySelector("#member-gender").value = member.gender || "Nam";
+    document.querySelector("#member-type").value = member.membership_type || "monthly";
+    document.querySelector("#member-active").checked = member.active !== false;
+    deleteButton.disabled = false;
+  }
+
+  function renderMembers() {
+    count.textContent = `${members.length} người`;
+    if (!members.length) {
+      table.innerHTML = `<div class="empty">Chưa có thành viên</div>`;
+      return;
+    }
+    table.innerHTML = `
+      <table>
+        <thead><tr><th>Mã</th><th>Tên</th><th>Giới tính</th><th>Loại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>${members
+          .map(
+            (member) => `
+            <tr>
+              <td>${escapeHtml(member.code)}</td>
+              <td>${escapeHtml(member.name)}</td>
+              <td>${escapeHtml(member.gender)}</td>
+              <td>${memberType(member.membership_type)}</td>
+              <td><span class="status ${member.active ? "ok" : "debt"}">${member.active ? "Đang chơi" : "Đã nghỉ"}</span></td>
+              <td><div class="row-actions">
+                <button type="button" data-action="edit" data-id="${member.id}">Sửa</button>
+                <button class="danger" type="button" data-action="delete" data-id="${member.id}">Xóa</button>
+              </div></td>
+            </tr>
+          `,
+          )
+          .join("")}</tbody>
+      </table>`;
+  }
+
+  async function loadMembers() {
+    result.textContent = "Đang tải...";
+    localStorage.setItem("badminton_admin_key", key());
+    const response = await requestJson(`/api/members?key=${encodeURIComponent(key())}`);
+    members = response.members || [];
+    renderMembers();
+    result.textContent = JSON.stringify({ ok: true, loadedMembers: members.length }, null, 2);
+  }
+
+  async function softDeleteMember(id) {
+    result.textContent = "Đang xóa...";
+    const response = await requestJson(`/api/members?id=${encodeURIComponent(id)}&key=${encodeURIComponent(key())}`, {
+      method: "DELETE",
+    });
+    result.textContent = JSON.stringify(response, null, 2);
+    clearForm();
+    await loadMembers();
+  }
+
+  document.querySelector("#load-members")?.addEventListener("click", () => loadMembers().catch((error) => (result.textContent = error.message)));
+  document.querySelector("#new-member")?.addEventListener("click", clearForm);
+  deleteButton.addEventListener("click", () => {
+    const id = document.querySelector("#member-id").value;
+    if (id) softDeleteMember(id).catch((error) => (result.textContent = error.message));
+  });
+
+  table.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const member = members.find((item) => item.id === button.dataset.id);
+    if (!member) return;
+    if (button.dataset.action === "edit") fillForm(member);
+    if (button.dataset.action === "delete") softDeleteMember(member.id).catch((error) => (result.textContent = error.message));
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    result.textContent = "Đang lưu...";
+    localStorage.setItem("badminton_admin_key", key());
+    const id = document.querySelector("#member-id").value;
+    const payload = {
+      code: document.querySelector("#member-code").value,
+      name: document.querySelector("#member-name").value,
+      gender: document.querySelector("#member-gender").value,
+      membership_type: document.querySelector("#member-type").value,
+      active: document.querySelector("#member-active").checked,
+    };
+    try {
+      const response = await requestJson(
+        id ? `/api/members?id=${encodeURIComponent(id)}&key=${encodeURIComponent(key())}` : `/api/members?key=${encodeURIComponent(key())}`,
+        {
+          method: id ? "PATCH" : "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      result.textContent = JSON.stringify(response, null, 2);
+      clearForm();
+      await loadMembers();
+    } catch (error) {
+      result.textContent = error.message;
+    }
+  });
+
+  clearForm();
+  if (key()) loadMembers().catch((error) => (result.textContent = error.message));
+}
+
+function initCategoriesAdmin() {
+  const form = document.querySelector("#category-form");
+  if (!form) return;
+  const keyInput = document.querySelector("#category-key");
+  const result = document.querySelector("#category-result");
+  const table = document.querySelector("#categories-table");
+  const count = document.querySelector("#category-count");
+  const deleteButton = document.querySelector("#delete-category");
+  let categories = [];
+
+  keyInput.value = rememberKey("badminton_admin_key");
+
+  function key() {
+    return keyInput.value;
+  }
+
+  function clearForm() {
+    document.querySelector("#category-id").value = "";
+    document.querySelector("#category-type").value = "expense";
+    document.querySelector("#category-name").value = "";
+    document.querySelector("#category-amount").value = 0;
+    document.querySelector("#category-sort").value = 100;
+    document.querySelector("#category-note").value = "";
+    document.querySelector("#category-active").checked = true;
+    deleteButton.disabled = true;
+  }
+
+  function fillForm(category) {
+    document.querySelector("#category-id").value = category.id;
+    document.querySelector("#category-type").value = category.type;
+    document.querySelector("#category-name").value = category.name || "";
+    document.querySelector("#category-amount").value = Number(category.default_amount || 0);
+    document.querySelector("#category-sort").value = Number(category.sort_order || 100);
+    document.querySelector("#category-note").value = category.note || "";
+    document.querySelector("#category-active").checked = category.active !== false;
+    deleteButton.disabled = false;
+  }
+
+  function renderCategories() {
+    count.textContent = `${categories.length} hạng mục`;
+    if (!categories.length) {
+      table.innerHTML = `<div class="empty">Chưa có hạng mục</div>`;
+      return;
+    }
+    table.innerHTML = `
+      <table>
+        <thead><tr><th>Loại</th><th>Hạng mục</th><th class="num">Mặc định</th><th class="num">Thứ tự</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>${categories
+          .map(
+            (category) => `
+            <tr>
+              <td>${typeLabel(category.type)}</td>
+              <td>${escapeHtml(category.name)}</td>
+              <td class="num">${formatMoney(category.default_amount)}</td>
+              <td class="num">${Number(category.sort_order || 0)}</td>
+              <td><span class="status ${category.active ? "ok" : "debt"}">${category.active ? "Đang dùng" : "Đã ẩn"}</span></td>
+              <td><div class="row-actions">
+                <button type="button" data-action="edit" data-id="${category.id}">Sửa</button>
+                <button class="danger" type="button" data-action="delete" data-id="${category.id}">Xóa</button>
+              </div></td>
+            </tr>
+          `,
+          )
+          .join("")}</tbody>
+      </table>`;
+  }
+
+  async function loadCategories() {
+    result.textContent = "Đang tải...";
+    localStorage.setItem("badminton_admin_key", key());
+    const response = await requestJson(`/api/transaction-categories?key=${encodeURIComponent(key())}`);
+    categories = response.categories || [];
+    renderCategories();
+    result.textContent = JSON.stringify({ ok: true, loadedCategories: categories.length }, null, 2);
+  }
+
+  async function deleteCategory(id) {
+    result.textContent = "Đang xóa...";
+    const response = await requestJson(`/api/transaction-categories?id=${encodeURIComponent(id)}&key=${encodeURIComponent(key())}`, {
+      method: "DELETE",
+    });
+    result.textContent = JSON.stringify(response, null, 2);
+    clearForm();
+    await loadCategories();
+  }
+
+  document
+    .querySelector("#load-categories")
+    ?.addEventListener("click", () => loadCategories().catch((error) => (result.textContent = error.message)));
+  document.querySelector("#new-category")?.addEventListener("click", clearForm);
+  deleteButton.addEventListener("click", () => {
+    const id = document.querySelector("#category-id").value;
+    if (id) deleteCategory(id).catch((error) => (result.textContent = error.message));
+  });
+
+  table.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const category = categories.find((item) => item.id === button.dataset.id);
+    if (!category) return;
+    if (button.dataset.action === "edit") fillForm(category);
+    if (button.dataset.action === "delete") deleteCategory(category.id).catch((error) => (result.textContent = error.message));
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    result.textContent = "Đang lưu...";
+    localStorage.setItem("badminton_admin_key", key());
+    const id = document.querySelector("#category-id").value;
+    const payload = {
+      type: document.querySelector("#category-type").value,
+      name: document.querySelector("#category-name").value,
+      defaultAmount: Number(document.querySelector("#category-amount").value),
+      sortOrder: Number(document.querySelector("#category-sort").value),
+      note: document.querySelector("#category-note").value,
+      active: document.querySelector("#category-active").checked,
+    };
+    try {
+      const response = await requestJson(
+        id
+          ? `/api/transaction-categories?id=${encodeURIComponent(id)}&key=${encodeURIComponent(key())}`
+          : `/api/transaction-categories?key=${encodeURIComponent(key())}`,
+        {
+          method: id ? "PATCH" : "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      result.textContent = JSON.stringify(response, null, 2);
+      clearForm();
+      await loadCategories();
+    } catch (error) {
+      result.textContent = error.message;
+    }
+  });
+
+  clearForm();
+  if (key()) loadCategories().catch((error) => (result.textContent = error.message));
+}
+
 initDashboard();
 initImport();
 initAccounting();
 initSetup();
+initMembersAdmin();
+initCategoriesAdmin();

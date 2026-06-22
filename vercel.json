@@ -9,6 +9,14 @@
       "destination": "/admin-setup.html"
     },
     {
+      "source": "/admin/members",
+      "destination": "/members.html"
+    },
+    {
+      "source": "/admin/categories",
+      "destination": "/categories.html"
+    },
+    {
       "source": "/ke-toan",
       "destination": "/accounting.html"
     }

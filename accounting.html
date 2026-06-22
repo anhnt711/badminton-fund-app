@@ -18,20 +18,26 @@
         </div>
         <nav class="nav">
           <a href="/">Dashboard</a>
+          <a href="/admin/members">Thành viên</a>
+          <a href="/admin/categories">Hạng mục tiền</a>
         </nav>
       </header>
 
       <section class="notice">
-        Không cần đăng nhập. Ai có link chứa key kế toán thì nhập được thu chi, vì vậy chỉ gửi link cho người phụ trách.
+        Kế toán mở link có key một lần, ví dụ <strong>/ke-toan?key=ACCOUNTANT_KEY</strong>, app sẽ nhớ quyền trên máy này. Lần sau chỉ cần mở <strong>/ke-toan</strong>.
       </section>
 
       <form id="accounting-form" class="grid two-col" style="margin-top:12px">
         <section class="panel">
           <div class="panel-header"><h2>Nhập thu chi</h2></div>
           <div class="panel-body form-grid">
-            <div class="field full">
+            <div id="accountant-key-field" class="field full">
               <label for="accountant-key">Kế toán key</label>
               <input id="accountant-key" type="password" autocomplete="off" required />
+            </div>
+            <div id="accountant-key-status" class="notice compact full" hidden>
+              Đã lưu quyền kế toán trên máy này.
+              <button id="change-accountant-key" type="button">Đổi key</button>
             </div>
             <div class="field">
               <label for="tx-date">Ngày</label>
@@ -49,12 +55,16 @@
               <input id="tx-member" name="member" placeholder="Tên hoặc mã, bỏ trống nếu là khoản chi chung" />
             </div>
             <div class="field">
-              <label for="tx-amount">Số tiền</label>
-              <input id="tx-amount" name="amount" type="number" min="1" step="1000" required />
+              <label for="tx-category">Hạng mục</label>
+              <select id="tx-category" name="categoryId" required></select>
             </div>
             <div class="field full">
-              <label for="tx-category">Nội dung</label>
-              <input id="tx-category" name="category" placeholder="Đóng tiền tháng, tiền sân, mua cầu..." required />
+              <label for="tx-category-custom">Nội dung khác</label>
+              <input id="tx-category-custom" name="category" placeholder="Chỉ nhập khi chọn hạng mục Khác" />
+            </div>
+            <div class="field">
+              <label for="tx-amount">Số tiền</label>
+              <input id="tx-amount" name="amount" type="number" min="1" step="1000" required />
             </div>
             <div class="field full">
               <label for="tx-note">Ghi chú</label>
@@ -70,6 +80,13 @@
           <div class="panel-body">
             <div id="result" class="result">Chưa có dữ liệu.</div>
           </div>
+        </section>
+        <section class="panel" style="grid-column:1 / -1">
+          <div class="panel-header">
+            <h2>Hạng mục đang dùng</h2>
+            <a class="link-button" href="/admin/categories">Sửa hạng mục</a>
+          </div>
+          <div id="accounting-categories" class="table-wrap"></div>
         </section>
       </form>
     </main>

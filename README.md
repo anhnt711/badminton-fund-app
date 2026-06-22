@@ -5,6 +5,8 @@ Web app quản lý công nợ đội cầu lông:
 - Dashboard công khai: `/`
 - Nhập buổi từ JSON do AI chuẩn hóa từ ảnh: `/admin/import?key=ADMIN_IMPORT_KEY`
 - Cấu hình thành viên/bảng giá: `/admin/setup?key=ADMIN_IMPORT_KEY`
+- Thêm/sửa/xóa mềm từng thành viên: `/admin/members?key=ADMIN_IMPORT_KEY`
+- Cấu hình hạng mục thu/chi: `/admin/categories?key=ADMIN_IMPORT_KEY`
 - Kế toán nhập thu chi: `/ke-toan?key=ACCOUNTANT_KEY`
 
 ## Cài Supabase
@@ -82,13 +84,17 @@ TV03,Lê Văn C,Nam,guest,true
 
 ### Kế toán
 
-Kế toán mở `/ke-toan?key=ACCOUNTANT_KEY` và nhập các khoản:
+Kế toán mở `/ke-toan?key=ACCOUNTANT_KEY` một lần. App sẽ lưu key trong trình duyệt; lần sau chỉ cần mở `/ke-toan`.
+
+Kế toán chọn loại `Thu` hoặc `Chi`, chọn hạng mục rồi nhập/lưu khoản:
 
 - Thành viên đóng tiền
 - Tiền sân
 - Mua cầu
 - Mua nước
 - Chi phí phát sinh
+
+Hạng mục có số tiền mặc định sẽ tự điền số tiền. Ví dụ hạng mục `Chi - Tiền sân - 400000` sẽ tự điền 400.000đ khi kế toán chọn.
 
 ### Thành viên
 

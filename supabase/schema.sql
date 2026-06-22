@@ -51,11 +51,23 @@ create table if not exists transactions (
   created_at timestamptz not null default now()
 );
 
+create table if not exists transaction_categories (
+  id uuid primary key default gen_random_uuid(),
+  type text not null check (type in ('income', 'expense')),
+  name text not null,
+  default_amount numeric not null default 0 check (default_amount >= 0),
+  active boolean not null default true,
+  sort_order integer not null default 100,
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_sessions_date on sessions(session_date);
 create index if not exists idx_session_players_session on session_players(session_id);
 create index if not exists idx_session_players_member on session_players(member_id);
 create index if not exists idx_transactions_date on transactions(transaction_date);
 create index if not exists idx_transactions_member on transactions(member_id);
+create unique index if not exists uq_transaction_categories_type_name on transaction_categories(type, name);
 
 insert into settings (key, value, description) values
   ('monthly_fee', '500000', 'Cố định 1 tháng'),
@@ -63,6 +75,13 @@ insert into settings (key, value, description) values
   ('guest_male_fee', '70000', 'Vãng lai nam mỗi buổi'),
   ('guest_female_fee', '50000', 'Vãng lai nữ mỗi buổi')
 on conflict (key) do update set value = excluded.value, description = excluded.description;
+
+insert into settings (key, value, description) values
+  ('bank_code', '', 'Mã ngân hàng VietQR, ví dụ VCB, BIDV, ACB'),
+  ('bank_account', '', 'Số tài khoản nhận tiền'),
+  ('bank_owner', '', 'Tên chủ tài khoản nhận tiền'),
+  ('transfer_prefix', 'CAULONG', 'Tiền tố nội dung chuyển khoản')
+on conflict (key) do nothing;
 
 insert into members (code, name, gender, membership_type) values
   ('TV01', 'Thành viên 01', 'Nam', 'monthly'),
@@ -101,8 +120,23 @@ on conflict (code) do update set
   membership_type = excluded.membership_type,
   active = true;
 
+insert into transaction_categories (type, name, default_amount, sort_order, note) values
+  ('expense', 'Tiền sân', '400000', 10, 'Số tiền cố định mỗi lần thuê sân'),
+  ('expense', 'Mua cầu', '0', 20, 'Nhập số tiền thực tế khi mua cầu'),
+  ('expense', 'Mua nước', '0', 30, 'Nhập số tiền thực tế khi mua nước'),
+  ('expense', 'Chi phí khác', '0', 90, ''),
+  ('income', 'Đóng tiền tháng', '0', 10, ''),
+  ('income', 'Đóng tiền kèo', '0', 20, ''),
+  ('income', 'Thu khác', '0', 90, '')
+on conflict (type, name) do update set
+  default_amount = excluded.default_amount,
+  sort_order = excluded.sort_order,
+  note = excluded.note,
+  active = true;
+
 alter table settings enable row level security;
 alter table members enable row level security;
 alter table sessions enable row level security;
 alter table session_players enable row level security;
 alter table transactions enable row level security;
+alter table transaction_categories enable row level security;

@@ -18,6 +18,8 @@
         </div>
         <nav class="nav">
           <a href="/">Dashboard</a>
+          <a href="/admin/members">Thành viên</a>
+          <a href="/admin/categories">Hạng mục tiền</a>
           <a href="/admin/import">Nhập buổi</a>
           <a href="/ke-toan">Kế toán</a>
         </nav>
@@ -50,6 +52,22 @@
             <div class="field">
               <label for="guest-female-fee">Vãng lai nữ</label>
               <input id="guest-female-fee" type="number" min="0" step="1000" required />
+            </div>
+            <div class="field full">
+              <label for="bank-code">Mã ngân hàng VietQR</label>
+              <input id="bank-code" autocomplete="off" placeholder="VD: VCB, BIDV, ACB" />
+            </div>
+            <div class="field">
+              <label for="bank-account">Số tài khoản</label>
+              <input id="bank-account" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="bank-owner">Chủ tài khoản</label>
+              <input id="bank-owner" autocomplete="off" />
+            </div>
+            <div class="field full">
+              <label for="transfer-prefix">Tiền tố nội dung chuyển khoản</label>
+              <input id="transfer-prefix" autocomplete="off" placeholder="CAULONG" />
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap" class="full">
               <button id="load-setup" class="secondary" type="button">Tải cấu hình</button>
