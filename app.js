@@ -74,7 +74,7 @@ async function loadDashboard() {
   try {
     root.innerHTML = `<div class="empty">Đang tải...</div>`;
     const payload = await requestJson(`/api/public-data?month=${monthInput.value}`);
-    const { totals, balances, sessions, transactions, payment } = payload.data;
+    const { totals, balances, payment } = payload.data;
     const storedCode = localStorage.getItem("badminton_member_code");
     const storedId = localStorage.getItem("badminton_selected_member");
     const selectedMember =
@@ -82,57 +82,31 @@ async function loadDashboard() {
       balances.find((row) => row.id === storedId) ||
       balances.find((row) => row.balance > 0) ||
       balances[0];
+    const sortedBalances = [...balances].sort((left, right) => {
+      const leftDebt = Math.max(0, Number(left.balance || 0));
+      const rightDebt = Math.max(0, Number(right.balance || 0));
+      if (rightDebt !== leftDebt) return rightDebt - leftDebt;
+      return String(left.name || "").localeCompare(String(right.name || ""), "vi");
+    });
+    const viewingCurrentMonth = monthInput.value === currentMonth();
     root.innerHTML = `
-      <section class="hero-dashboard">
+      <section class="wallet-dashboard">
+        ${viewingCurrentMonth ? "" : `<div class="month-pill">Đang xem tháng ${formatMonthLabel(monthInput.value)}</div>`}
         ${memberPaymentPanel(selectedMember, balances, payment, monthInput.value)}
-        <div class="fund-overview">
-          <div class="overview-card debt">
-            <span>Còn phải thu</span>
-            <strong>${formatMoney(totals.memberDebt)}</strong>
-            <small>${totals.debtors} người còn nợ</small>
-          </div>
-          <div class="overview-card">
-            <span>Đã thu tháng này</span>
-            <strong>${formatMoney(totals.totalPaid)}</strong>
-            <small>Trong tháng đang xem</small>
-          </div>
-          <div class="overview-card">
-            <span>Quỹ hiện có</span>
-            <strong>${formatMoney(totals.fundBalance)}</strong>
-            <small>Tổng thu - chi đến nay</small>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid summary-grid dashboard-metrics">
-        <div class="metric blue"><div class="label">Tổng phải thu</div><div class="value">${formatMoney(totals.totalDue)}</div><div class="muted">${totals.activeMembers} thành viên</div></div>
-        <div class="metric"><div class="label">Tổng tiền kèo</div><div class="value">${formatMoney(totals.potDue)}</div><div class="muted">Từ dữ liệu buổi</div></div>
-        <div class="metric"><div class="label">Kèo còn lại</div><div class="value">${formatMoney(totals.potRemaining)}</div><div class="muted">Sau nước và chi kèo</div></div>
-        <div class="metric amber"><div class="label">Số buổi</div><div class="value">${totals.sessions}</div><div class="muted">Trong tháng đang xem</div></div>
-      </section>
-
-      <section class="grid two-col dashboard-content">
-        <div class="panel">
-          <div class="panel-header"><h2>Công nợ thành viên</h2><span class="muted">${balances.length} người</span></div>
-          ${balanceCards(balances, payment, monthInput.value)}
-          <div class="table-wrap desktop-only">${balanceTable(balances)}</div>
-        </div>
-        <div class="grid">
-          <div class="panel">
-            <div class="panel-header"><h2>Buổi đã nhập</h2><span class="muted">${sessions.length} buổi</span></div>
-            <div class="table-wrap">${sessionsTable(sessions)}</div>
-          </div>
-          <div class="panel">
-            <div class="panel-header"><h2>Thu chi gần đây</h2><span class="muted">${transactions.length} dòng</span></div>
-            <div class="table-wrap">${transactionsTable(transactions)}</div>
-          </div>
-        </div>
+        ${fundTransparency(totals)}
+        ${teamBalanceList(sortedBalances)}
       </section>
     `;
     bindDashboardActions(root);
   } catch (error) {
     renderError(root, error);
   }
+}
+
+function formatMonthLabel(month) {
+  const [year, monthNumber] = String(month || "").split("-");
+  if (!year || !monthNumber) return "";
+  return `${monthNumber}/${year}`;
 }
 
 function transferContent(row, payment, month) {
@@ -150,53 +124,67 @@ function paymentQrUrl(row, payment, month) {
 
 function memberPaymentPanel(row, rows, payment, month) {
   if (!rows.length) {
-    return `<div class="payment-panel"><div class="empty">Chưa có thành viên</div></div>`;
+    return `<section class="member-wallet"><div class="empty">Chưa có thành viên</div></section>`;
   }
   const debt = Math.max(0, Number(row?.balance || 0));
   const content = transferContent(row, payment, month);
   const accountReady = payment?.bankCode && payment?.bankAccount;
   const qrUrl = paymentQrUrl(row, payment, month);
+  const accountLine = [payment?.bankCode, payment?.bankAccount, payment?.bankOwner].filter(Boolean).join(" · ");
+  const paidEnough = debt <= 0;
   return `
-    <div class="payment-panel">
-      <div class="payment-main">
-        <div class="field member-picker">
-          <label for="member-select">👇 Chọn tên của bạn để xem công nợ</label>
-          <input id="member-search" type="search" placeholder="Gõ tên để tìm nhanh..." autocomplete="off" />
-          <select id="member-select">
-            ${rows.map((item) => `<option value="${item.id}" data-code="${escapeHtml(item.code)}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} — còn nợ ${formatMoney(item.balance)}</option>`).join("")}
-          </select>
-        </div>
-        <div>
-          <p class="eyebrow">Tổng tiền bạn cần đóng (đã gồm nợ cũ)</p>
-          <div class="debt-amount ${debt > 0 ? "" : "paid"}">${formatMoney(debt)}</div>
-          <p class="payment-note">${debt > 0 ? "Quét QR hoặc copy số tiền & nội dung bên dưới để chuyển khoản." : "🎉 Bạn đã đóng đủ, không còn nợ."}</p>
-        </div>
-        <dl class="debt-breakdown">
-          <div><dt>Nợ kỳ trước</dt><dd>${formatMoney(Math.max(0, row?.prevBalance || 0))}</dd></div>
-          <div><dt>Cố định tháng</dt><dd>${formatMoney(row?.monthFixed || 0)}</dd></div>
-          <div><dt>Phí buổi + kèo</dt><dd>${formatMoney((row?.monthSession || 0) + (row?.monthPot || 0))}</dd></div>
-          <div class="paid-cell"><dt>Đã đóng tháng này</dt><dd>${formatMoney(row?.monthPaid || 0)}</dd></div>
-        </dl>
-        <div class="quick-copy">
-          <button class="primary" type="button" data-copy="${copyAttr(debt)}">Copy số tiền</button>
-          <button type="button" data-copy="${copyAttr(content)}">Copy nội dung</button>
-          <button type="button" data-copy="${copyAttr(paymentInfoText(row, payment, month))}">Copy tất cả</button>
-        </div>
-        <dl class="payment-details">
-          <div><dt>Ngân hàng</dt><dd>${accountReady ? escapeHtml(payment.bankCode) : "Chưa cấu hình"}</dd></div>
-          <div><dt>Số TK</dt><dd>${payment?.bankAccount ? escapeHtml(payment.bankAccount) : "Chưa cấu hình"}</dd></div>
-          <div><dt>Chủ TK</dt><dd>${payment?.bankOwner ? escapeHtml(payment.bankOwner) : "Chưa cấu hình"}</dd></div>
-          <div><dt>Nội dung</dt><dd>${escapeHtml(content)}</dd></div>
-        </dl>
+    <section class="member-wallet">
+      <div class="field member-picker">
+        <label for="member-select">Chọn tên của bạn</label>
+        <input id="member-search" type="search" placeholder="Gõ tên để tìm nhanh" autocomplete="off" />
+        <select id="member-select">
+          ${rows.map((item) => `<option value="${escapeHtml(item.id)}" data-code="${escapeHtml(item.code)}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)}</option>`).join("")}
+        </select>
       </div>
-      <div class="qr-box">
+
+      <article class="wallet-card ${paidEnough ? "is-settled" : "has-debt"}">
+        <div class="wallet-card-top">
+          <div>
+            <p class="wallet-label">${paidEnough ? "Bạn đã đóng đủ" : "Bạn cần đóng"}</p>
+            ${
+              paidEnough
+                ? `<div class="paid-check" aria-hidden="true">✓</div>`
+                : `<div class="wallet-amount">${formatMoney(debt)}</div>`
+            }
+            <p class="wallet-member">${escapeHtml(row.name || "")}</p>
+          </div>
+        </div>
+
         ${
-          qrUrl
-            ? `<img src="${qrUrl}" alt="QR chuyển khoản cho ${escapeHtml(row.name)}" />`
-            : `<div class="qr-placeholder"><strong>QR chuyển khoản</strong><span>Nhập mã ngân hàng và số tài khoản trong Cấu hình đội để hiện QR tự động.</span></div>`
+          paidEnough
+            ? `<p class="settled-note">Không còn khoản cần chuyển cho tháng này.</p>`
+            : `
+              <div class="wallet-chips">
+                <span><small>Nợ kỳ trước</small><strong>${formatMoney(Math.max(0, row?.prevBalance || 0))}</strong></span>
+                <span><small>Tháng này</small><strong>${formatMoney(row?.monthDue || 0)}</strong></span>
+                <span><small>Đã đóng</small><strong>${formatMoney(row?.monthPaid || 0)}</strong></span>
+              </div>
+
+              <div class="wallet-pay">
+                <div class="qr-box">
+                  ${
+                    accountReady && qrUrl
+                      ? `<img src="${escapeHtml(qrUrl)}" alt="QR chuyển khoản cho ${escapeHtml(row.name || "")}" />`
+                      : `<div class="qr-placeholder"><strong>Chưa có QR</strong><span>Cần cấu hình mã ngân hàng và số tài khoản để hiện QR chuyển khoản.</span></div>`
+                  }
+                </div>
+                <div class="wallet-actions">
+                  <p class="account-line">${accountLine ? escapeHtml(accountLine) : "Chưa cấu hình ngân hàng"}</p>
+                  <button class="primary" type="button" data-copy="${copyAttr(paymentInfoText(row, payment, month))}">Copy tất cả</button>
+                  <div class="secondary-actions">
+                    <button type="button" data-copy="${copyAttr(Math.round(debt))}">Copy số tiền</button>
+                    <button type="button" data-copy="${copyAttr(content)}">Copy nội dung</button>
+                  </div>
+                </div>
+              </div>`
         }
-      </div>
-    </div>`;
+      </article>
+    </section>`;
 }
 
 function paymentInfoText(row, payment, month) {
@@ -209,6 +197,50 @@ function paymentInfoText(row, payment, month) {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function fundTransparency(totals) {
+  return `
+    <section class="fund-lines" aria-label="minh bạch quỹ">
+      <div class="fund-line">
+        <span>Quỹ đội hiện có</span>
+        <strong>${formatMoney(totals?.fundBalance || 0)}</strong>
+      </div>
+      <div class="fund-line">
+        <span>Còn phải thu cả đội</span>
+        <strong>${formatMoney(totals?.memberDebt || 0)}</strong>
+        <small>${Number(totals?.debtors || 0)} người</small>
+      </div>
+    </section>`;
+}
+
+function teamBalanceList(rows) {
+  if (!rows.length) return `<section class="team-panel"><div class="empty">Chưa có thành viên</div></section>`;
+  const canToggle = rows.length > 5;
+  return `
+    <section class="team-panel">
+      <div class="team-panel-head">
+        <h2>Cả đội</h2>
+        <span>${rows.length} thành viên</span>
+      </div>
+      <div class="team-list ${canToggle ? "is-collapsed" : ""}" data-team-list>
+        ${rows
+          .map((row) => {
+            const debt = Math.max(0, Number(row.balance || 0));
+            return `
+              <div class="team-row">
+                <span>${escapeHtml(row.name || "")}</span>
+                <strong class="${debt > 0 ? "owes" : "settled"}">${debt > 0 ? formatMoney(debt) : "Đã đủ"}</strong>
+              </div>`;
+          })
+          .join("")}
+      </div>
+      ${
+        canToggle
+          ? `<button class="team-toggle" type="button" data-team-toggle data-count="${rows.length}">Xem tất cả ${rows.length} thành viên</button>`
+          : ""
+      }
+    </section>`;
 }
 
 function balanceCards(rows, payment, month) {
@@ -245,13 +277,17 @@ function bindDashboardActions(root) {
 
   root.querySelector("#member-search")?.addEventListener("input", (event) => {
     const query = event.target.value.trim().toLowerCase();
-    let firstVisible = null;
     Array.from(memberSelect?.options || []).forEach((option) => {
       const match = option.textContent.toLowerCase().includes(query);
       option.hidden = !match;
-      if (match && !firstVisible) firstVisible = option;
     });
-    if (query && firstVisible) firstVisible.selected = true;
+  });
+
+  root.querySelector("[data-team-toggle]")?.addEventListener("click", (event) => {
+    const list = root.querySelector("[data-team-list]");
+    const collapsed = list?.classList.toggle("is-collapsed");
+    const count = event.currentTarget.dataset.count;
+    event.currentTarget.textContent = collapsed ? `Xem tất cả ${count} thành viên` : "Thu gọn danh sách";
   });
 
   root.querySelectorAll("button[data-copy]").forEach((button) => {

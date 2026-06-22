@@ -8,27 +8,21 @@
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
+      <header class="topbar public-topbar">
         <div class="brand">
           <img src="/assets/court-mark.svg" alt="" />
-          <div>
+          <div class="brand-copy">
             <h1>Quỹ đội cầu lông</h1>
-            <p>Công nợ, quỹ kèo và thu chi công khai</p>
           </div>
         </div>
-        <nav class="nav">
-          <a href="/" class="active">Dashboard</a>
-          <a href="/admin">Trang quản trị</a>
-        </nav>
-      </header>
-
-      <section class="toolbar">
-        <div class="field">
-          <label for="month">Tháng</label>
-          <input id="month" type="month" />
+        <div class="month-tools" aria-label="chọn tháng xem quỹ">
+          <div class="field">
+            <label for="month">tháng</label>
+            <input id="month" type="month" />
+          </div>
+          <button id="reload" class="secondary" type="button">tải lại</button>
         </div>
-        <button id="reload" class="secondary" type="button">Tải lại</button>
-      </section>
+      </header>
 
       <div id="dashboard"></div>
     </main>
