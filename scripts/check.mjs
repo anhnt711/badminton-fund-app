@@ -3,6 +3,8 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "index.html",
+  "admin.html",
+  "attendance.html",
   "admin-import.html",
   "admin-setup.html",
   "members.html",

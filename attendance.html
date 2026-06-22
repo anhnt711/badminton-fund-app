@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Điểm danh buổi · Quỹ cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Điểm danh buổi</h1>
+            <p>Tick tên người tham gia rồi lưu thành một buổi tập</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/admin">Trang quản trị</a>
+        </nav>
+      </header>
+
+      <section id="attendance-guard" class="notice" hidden>
+        Bạn chưa đăng nhập quản trị. <a href="/admin">Đăng nhập tại đây</a> rồi quay lại trang này.
+      </section>
+
+      <form id="attendance-form" class="grid two-col" hidden>
+        <section class="panel">
+          <div class="panel-header"><h2>Thông tin buổi</h2></div>
+          <div class="panel-body form-grid">
+            <div class="field">
+              <label for="att-date">Ngày</label>
+              <input id="att-date" type="date" required />
+            </div>
+            <div class="field">
+              <label for="att-title">Tên buổi</label>
+              <input id="att-title" type="text" placeholder="Ví dụ: Tối thứ 2" />
+            </div>
+            <div class="field">
+              <label for="att-shuttle">Số cầu</label>
+              <input id="att-shuttle" type="number" min="0" step="1" value="0" />
+            </div>
+            <div class="field">
+              <label for="att-bottle">Số chai nước</label>
+              <input id="att-bottle" type="number" min="0" step="1" value="0" />
+            </div>
+            <div class="field">
+              <label for="att-water">Tiền nước (đ)</label>
+              <input id="att-water" type="number" min="0" step="1000" value="0" />
+            </div>
+            <div class="field">
+              <label for="att-pot">Chi từ quỹ kèo (đ)</label>
+              <input id="att-pot" type="number" min="0" step="1000" value="0" />
+            </div>
+            <div class="field full">
+              <label for="att-note">Ghi chú</label>
+              <input id="att-note" type="text" placeholder="Tuỳ chọn" />
+            </div>
+            <div class="full attendance-actions">
+              <button class="primary" type="submit">Lưu buổi điểm danh</button>
+              <span id="att-selected-count" class="muted">Đã chọn 0 người</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Người tham gia</h2>
+            <label class="check-field tick-all">
+              <input id="att-tick-all" type="checkbox" />
+              <span>Tick tất cả</span>
+            </label>
+          </div>
+          <div class="panel-body">
+            <input id="att-search" type="search" placeholder="Tìm tên thành viên..." style="margin-bottom:10px" />
+            <div id="attendance-list" class="attendance-list"><div class="empty">Đang tải...</div></div>
+          </div>
+        </section>
+
+        <section class="panel" style="grid-column:1 / -1">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="att-result" class="result">Chưa lưu buổi nào.</div>
+          </div>
+        </section>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

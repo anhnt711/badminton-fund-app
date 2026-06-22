@@ -18,26 +18,26 @@
         </div>
         <nav class="nav">
           <a href="/">Dashboard</a>
-          <a href="/admin/members">Thành viên</a>
+          <a href="/admin">Trang quản trị</a>
           <a href="/admin/categories">Hạng mục tiền</a>
         </nav>
       </header>
 
-      <section class="notice">
-        Kế toán mở link có key một lần, ví dụ <strong>/ke-toan?key=ACCOUNTANT_KEY</strong>, app sẽ nhớ quyền trên máy này. Lần sau chỉ cần mở <strong>/ke-toan</strong>.
+      <section id="accounting-guard" class="notice" hidden>
+        Bạn chưa đăng nhập quản trị. <a href="/admin">Đăng nhập tại đây</a> rồi quay lại trang này.
       </section>
 
       <form id="accounting-form" class="grid two-col" style="margin-top:12px">
         <section class="panel">
           <div class="panel-header"><h2>Nhập thu chi</h2></div>
           <div class="panel-body form-grid">
-            <div id="accountant-key-field" class="field full">
-              <label for="accountant-key">Kế toán key</label>
-              <input id="accountant-key" type="password" autocomplete="off" required />
+            <div id="accountant-key-field" class="field full" hidden>
+              <label for="accountant-key">Mật khẩu quản trị</label>
+              <input id="accountant-key" type="password" autocomplete="off" />
             </div>
             <div id="accountant-key-status" class="notice compact full" hidden>
-              Đã lưu quyền kế toán trên máy này.
-              <button id="change-accountant-key" type="button">Đổi key</button>
+              Đã đăng nhập quản trị trên máy này.
+              <button id="change-accountant-key" type="button">Đăng xuất</button>
             </div>
             <div class="field">
               <label for="tx-date">Ngày</label>

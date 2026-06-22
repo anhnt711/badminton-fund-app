@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 
   try {
-    requireSecret(req, "ACCOUNTANT_KEY");
+    requireSecret(req, "ADMIN_IMPORT_KEY");
     const payload = bodyOf(req);
     const items = Array.isArray(payload.items) ? payload.items : [payload];
     const [members, categories] = await Promise.all([

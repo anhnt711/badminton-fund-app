@@ -673,3 +673,199 @@ th.num {
     font-size: 34px;
   }
 }
+
+/* ---- Nav active ---- */
+.nav a.active {
+  border-color: #0d6f52;
+  background: #0d6f52;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ---- Member search + debt breakdown ---- */
+#member-search {
+  margin-top: 8px;
+  border-color: #b9d4c5;
+}
+
+.debt-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.debt-breakdown div {
+  border: 1px solid #d7e5dc;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 9px 10px;
+}
+
+.debt-breakdown dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.debt-breakdown dd {
+  margin: 3px 0 0;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.debt-breakdown .paid-cell {
+  border-color: #b9d4c5;
+  background: var(--green-bg);
+}
+
+.debt-breakdown .paid-cell dd {
+  color: var(--green);
+}
+
+/* ---- Admin login ---- */
+.login-wrap {
+  display: grid;
+  place-items: center;
+  padding: 30px 0;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 26px 24px;
+  box-shadow: var(--shadow);
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.login-card p {
+  margin: 0;
+}
+
+.login-error {
+  border-radius: 8px;
+  background: var(--red-bg);
+  color: var(--red);
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ---- Admin hub ---- */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 26px rgba(22, 38, 54, 0.05);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.admin-card:hover {
+  transform: translateY(-2px);
+  border-color: #0d6f52;
+  box-shadow: 0 16px 36px rgba(13, 111, 82, 0.16);
+}
+
+.admin-card-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.admin-card strong {
+  font-size: 16px;
+}
+
+.admin-card small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ---- Attendance ---- */
+.attendance-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tick-all {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.attendance-list {
+  display: grid;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.attendance-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.attendance-row.checked {
+  border-color: #0d6f52;
+  background: var(--green-bg);
+}
+
+.attendance-row input {
+  grid-row: 1 / span 2;
+  width: 20px;
+  min-height: 20px;
+}
+
+.attendance-name {
+  font-weight: 700;
+}
+
+.attendance-meta {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .debt-breakdown {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -155,16 +155,23 @@ function memberPaymentPanel(row, rows, payment, month) {
     <div class="payment-panel">
       <div class="payment-main">
         <div class="field member-picker">
-          <label for="member-select">Chọn tên của bạn</label>
+          <label for="member-select">👇 Chọn tên của bạn để xem công nợ</label>
+          <input id="member-search" type="search" placeholder="Gõ tên để tìm nhanh..." autocomplete="off" />
           <select id="member-select">
-            ${rows.map((item) => `<option value="${item.id}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} - còn nợ ${formatMoney(item.balance)}</option>`).join("")}
+            ${rows.map((item) => `<option value="${item.id}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} — còn nợ ${formatMoney(item.balance)}</option>`).join("")}
           </select>
         </div>
         <div>
-          <p class="eyebrow">Số tiền cần chuyển</p>
+          <p class="eyebrow">Số tiền bạn cần chuyển</p>
           <div class="debt-amount ${debt > 0 ? "" : "paid"}">${formatMoney(debt)}</div>
-          <p class="payment-note">${debt > 0 ? "Copy số tiền và nội dung bên dưới khi chuyển khoản." : "Bạn đã hoàn tất công nợ tháng này."}</p>
+          <p class="payment-note">${debt > 0 ? "Quét QR hoặc copy số tiền & nội dung bên dưới để chuyển khoản." : "🎉 Bạn đã đóng đủ trong tháng này."}</p>
         </div>
+        <dl class="debt-breakdown">
+          <div><dt>Cố định</dt><dd>${formatMoney(row?.fixedDue || 0)}</dd></div>
+          <div><dt>Phí buổi</dt><dd>${formatMoney(row?.sessionDue || 0)}</dd></div>
+          <div><dt>Quỹ kèo</dt><dd>${formatMoney(row?.potDue || 0)}</dd></div>
+          <div class="paid-cell"><dt>Đã đóng</dt><dd>${formatMoney(row?.paid || 0)}</dd></div>
+        </dl>
         <div class="quick-copy">
           <button class="primary" type="button" data-copy="${copyAttr(debt)}">Copy số tiền</button>
           <button type="button" data-copy="${copyAttr(content)}">Copy nội dung</button>
@@ -223,9 +230,21 @@ function balanceCards(rows, payment, month) {
 }
 
 function bindDashboardActions(root) {
-  root.querySelector("#member-select")?.addEventListener("change", (event) => {
+  const memberSelect = root.querySelector("#member-select");
+  memberSelect?.addEventListener("change", (event) => {
     localStorage.setItem("badminton_selected_member", event.target.value);
     loadDashboard();
+  });
+
+  root.querySelector("#member-search")?.addEventListener("input", (event) => {
+    const query = event.target.value.trim().toLowerCase();
+    let firstVisible = null;
+    Array.from(memberSelect?.options || []).forEach((option) => {
+      const match = option.textContent.toLowerCase().includes(query);
+      option.hidden = !match;
+      if (match && !firstVisible) firstVisible = option;
+    });
+    if (query && firstVisible) firstVisible.selected = true;
   });
 
   root.querySelectorAll("button[data-copy]").forEach((button) => {
@@ -394,13 +413,14 @@ function initAccounting() {
   const customCategoryInput = document.querySelector("#tx-category-custom");
   const amountInput = document.querySelector("#tx-amount");
   const categoryTable = document.querySelector("#accounting-categories");
+  const guard = document.querySelector("#accounting-guard");
   const result = document.querySelector("#result");
-  keyInput.value = rememberKey("badminton_accountant_key");
+  keyInput.value = rememberKey("badminton_admin_key");
   document.querySelector("#tx-date").value = new Date().toISOString().slice(0, 10);
   let categories = [];
 
   function effectiveKey() {
-    return keyInput.value || localStorage.getItem("badminton_accountant_key") || "";
+    return keyInput.value || localStorage.getItem("badminton_admin_key") || "";
   }
 
   function refreshKeyUi() {
@@ -408,6 +428,7 @@ function initAccounting() {
     keyInput.required = !hasKey;
     keyField.hidden = hasKey;
     keyStatus.hidden = !hasKey;
+    if (guard) guard.hidden = hasKey;
   }
 
   function renderCategoryOptions() {
@@ -446,7 +467,7 @@ function initAccounting() {
   });
 
   changeKey?.addEventListener("click", () => {
-    localStorage.removeItem("badminton_accountant_key");
+    localStorage.removeItem("badminton_admin_key");
     keyInput.value = "";
     refreshKeyUi();
     keyInput.focus();
@@ -460,11 +481,11 @@ function initAccounting() {
     result.textContent = "Đang lưu...";
     const key = effectiveKey();
     if (!key) {
-      result.textContent = "Thiếu kế toán key. Mở link có key một lần hoặc nhập key tại ô trên.";
+      result.textContent = "Chưa đăng nhập quản trị. Hãy đăng nhập tại /admin rồi quay lại.";
       refreshKeyUi();
       return;
     }
-    localStorage.setItem("badminton_accountant_key", key);
+    localStorage.setItem("badminton_admin_key", key);
     const data = Object.fromEntries(new FormData(form).entries());
     const selectedCategory = categories.find((category) => category.id === data.categoryId);
     try {
@@ -930,9 +951,203 @@ function initCategoriesAdmin() {
   if (key()) loadCategories().catch((error) => (result.textContent = error.message));
 }
 
+function initAdminHub() {
+  const login = document.querySelector("#admin-login");
+  const hub = document.querySelector("#admin-hub");
+  if (!login || !hub) return;
+  const form = document.querySelector("#admin-login-form");
+  const passwordInput = document.querySelector("#admin-password");
+  const errorBox = document.querySelector("#admin-login-error");
+  const logout = document.querySelector("#admin-logout");
+  const submitBtn = form.querySelector("button[type=submit]");
+
+  function showHub() {
+    login.hidden = true;
+    hub.hidden = false;
+  }
+
+  function showLogin(message) {
+    hub.hidden = true;
+    login.hidden = false;
+    if (message) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+    } else {
+      errorBox.hidden = true;
+    }
+  }
+
+  function validateKey(key) {
+    return requestJson(`/api/members?key=${encodeURIComponent(key)}`);
+  }
+
+  const stored = rememberKey("badminton_admin_key");
+  if (stored) {
+    validateKey(stored)
+      .then(showHub)
+      .catch(() => {
+        localStorage.removeItem("badminton_admin_key");
+        showLogin();
+      });
+  } else {
+    showLogin();
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+    const key = passwordInput.value.trim();
+    if (!key) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Đang kiểm tra...";
+    try {
+      await validateKey(key);
+      localStorage.setItem("badminton_admin_key", key);
+      passwordInput.value = "";
+      showHub();
+    } catch (error) {
+      showLogin("Mật khẩu không đúng. Vui lòng thử lại.");
+      passwordInput.focus();
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Đăng nhập";
+    }
+  });
+
+  logout?.addEventListener("click", () => {
+    localStorage.removeItem("badminton_admin_key");
+    showLogin();
+  });
+}
+
+function initAttendance() {
+  const form = document.querySelector("#attendance-form");
+  if (!form) return;
+  const guard = document.querySelector("#attendance-guard");
+  const listBox = document.querySelector("#attendance-list");
+  const tickAll = document.querySelector("#att-tick-all");
+  const search = document.querySelector("#att-search");
+  const countLabel = document.querySelector("#att-selected-count");
+  const result = document.querySelector("#att-result");
+  const key = rememberKey("badminton_admin_key");
+  document.querySelector("#att-date").value = new Date().toISOString().slice(0, 10);
+  let members = [];
+  const checkedIds = new Set();
+
+  if (!key) {
+    guard.hidden = false;
+    form.hidden = true;
+    return;
+  }
+  guard.hidden = true;
+  form.hidden = false;
+
+  function matchesSearch(member) {
+    const q = (search.value || "").trim().toLowerCase();
+    if (!q) return true;
+    return `${member.code} ${member.name}`.toLowerCase().includes(q);
+  }
+
+  function updateCount() {
+    countLabel.textContent = `Đã chọn ${checkedIds.size} người`;
+    const visible = members.filter(matchesSearch);
+    tickAll.checked = visible.length > 0 && visible.every((member) => checkedIds.has(member.id));
+  }
+
+  function renderList() {
+    if (!members.length) {
+      listBox.innerHTML = `<div class="empty">Chưa có thành viên</div>`;
+      return;
+    }
+    const rows = members.filter(matchesSearch);
+    if (!rows.length) {
+      listBox.innerHTML = `<div class="empty">Không tìm thấy thành viên</div>`;
+      updateCount();
+      return;
+    }
+    listBox.innerHTML = rows
+      .map(
+        (member) => `
+          <label class="attendance-row ${checkedIds.has(member.id) ? "checked" : ""}">
+            <input type="checkbox" data-id="${member.id}" ${checkedIds.has(member.id) ? "checked" : ""} />
+            <span class="attendance-name">${escapeHtml(member.name)}</span>
+            <span class="attendance-meta">${escapeHtml(member.code)} · ${memberType(member.membership_type)}</span>
+          </label>`,
+      )
+      .join("");
+    updateCount();
+  }
+
+  async function loadMembers() {
+    listBox.innerHTML = `<div class="empty">Đang tải...</div>`;
+    const response = await requestJson(`/api/members?key=${encodeURIComponent(key)}`);
+    members = (response.members || []).filter((member) => member.active !== false);
+    renderList();
+  }
+
+  listBox.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("input[type=checkbox]");
+    if (!checkbox) return;
+    const id = checkbox.dataset.id;
+    if (checkbox.checked) checkedIds.add(id);
+    else checkedIds.delete(id);
+    checkbox.closest(".attendance-row")?.classList.toggle("checked", checkbox.checked);
+    updateCount();
+  });
+
+  tickAll.addEventListener("change", () => {
+    members.filter(matchesSearch).forEach((member) => {
+      if (tickAll.checked) checkedIds.add(member.id);
+      else checkedIds.delete(member.id);
+    });
+    renderList();
+  });
+
+  search.addEventListener("input", renderList);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!checkedIds.size) {
+      result.textContent = "Hãy tick ít nhất một người tham gia.";
+      return;
+    }
+    const players = members
+      .filter((member) => checkedIds.has(member.id))
+      .map((member) => ({ code: member.code, name: member.name, attended: true }));
+    const payload = {
+      date: document.querySelector("#att-date").value,
+      title: document.querySelector("#att-title").value || "Buổi cầu lông",
+      shuttleCount: Number(document.querySelector("#att-shuttle").value || 0),
+      bottleCount: Number(document.querySelector("#att-bottle").value || 0),
+      waterExpense: Number(document.querySelector("#att-water").value || 0),
+      potExpense: Number(document.querySelector("#att-pot").value || 0),
+      note: document.querySelector("#att-note").value || "",
+      players,
+    };
+    result.textContent = "Đang lưu...";
+    try {
+      const response = await requestJson(`/api/admin-import?key=${encodeURIComponent(key)}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      result.textContent = `Đã lưu buổi ${payload.date} với ${response.importedPlayers} người tham gia. Tổng tiền kèo ${formatMoney(response.potTotal || 0)}.`;
+      checkedIds.clear();
+      renderList();
+    } catch (error) {
+      result.textContent = error.message;
+    }
+  });
+
+  loadMembers().catch((error) => {
+    listBox.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+  });
+}
+
 initDashboard();
 initImport();
 initAccounting();
 initSetup();
 initMembersAdmin();
 initCategoriesAdmin();
+initAdminHub();
+initAttendance();
