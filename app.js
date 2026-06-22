@@ -595,20 +595,12 @@ function initSetup() {
     document.querySelector("#bank-account").value = "";
     document.querySelector("#bank-owner").value = "";
     document.querySelector("#transfer-prefix").value = "CAULONG";
-    document.querySelector("#members-csv").value = membersToCsv(
-      Array.from({ length: 30 }, (_, index) => {
-        const i = index + 1;
-        return {
-          code: `TV${String(i).padStart(2, "0")}`,
-          name: `Thành viên ${String(i).padStart(2, "0")}`,
-          gender: i % 5 === 0 ? "Nữ" : "Nam",
-          membership_type: i <= 12 ? "monthly" : i <= 18 ? "half_month" : "guest",
-          active: true,
-        };
-      }),
-    );
+    // Để TRỐNG danh sách thành viên: lưu trống = không đụng tới thành viên hiện có.
+    document.querySelector("#members-csv").value = "";
   };
   setDefaults();
+  // Tự nạp cấu hình + danh sách thành viên thật khi đã đăng nhập, tránh lưu nhầm đè thành viên.
+  if (keyInput.value) loadSetup().catch(() => {});
 
   async function loadSetup() {
     result.textContent = "Đang tải cấu hình...";

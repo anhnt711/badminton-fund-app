@@ -13,7 +13,7 @@
           <img src="/assets/court-mark.svg" alt="" />
           <div>
             <h1>Cấu hình đội</h1>
-            <p>Thay danh sách thành viên và bảng giá sau khi deploy</p>
+            <p>Bảng giá, tài khoản nhận tiền (nhập thành viên hàng loạt là tuỳ chọn)</p>
           </div>
         </div>
         <nav class="nav">
@@ -26,7 +26,7 @@
       </header>
 
       <section class="notice">
-        Dùng cùng admin key với trang nhập buổi. Loại đóng hợp lệ: <strong>monthly</strong>, <strong>half_month</strong>, <strong>guest</strong>.
+        ⚠️ Ô <strong>Thành viên CSV</strong> chỉ dùng để nhập hàng loạt. <strong>Để trống = giữ nguyên thành viên hiện có</strong> (chỉ lưu bảng giá & ngân hàng). Muốn thêm/sửa từng người, dùng trang <a href="/admin/members">Thành viên</a>.
       </section>
 
       <form id="setup-form" class="grid two-col" style="margin-top:12px">
@@ -77,11 +77,11 @@
         </section>
 
         <section class="panel">
-          <div class="panel-header"><h2>Thành viên CSV</h2></div>
+          <div class="panel-header"><h2>Thành viên CSV (tuỳ chọn)</h2></div>
           <div class="panel-body grid">
             <div class="field">
-              <label for="members-csv">code,name,gender,membership_type,active</label>
-              <textarea id="members-csv" spellcheck="false" required></textarea>
+              <label for="members-csv">code,name,gender,membership_type,active — để trống nếu không đổi thành viên</label>
+              <textarea id="members-csv" spellcheck="false" placeholder="Để trống = không thay đổi thành viên. Bấm 'Tải cấu hình' để xem/sửa danh sách hiện tại."></textarea>
             </div>
           </div>
         </section>
