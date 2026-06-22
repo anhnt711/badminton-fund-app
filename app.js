@@ -600,7 +600,21 @@ function initSetup() {
   };
   setDefaults();
   // Tự nạp cấu hình + danh sách thành viên thật khi đã đăng nhập, tránh lưu nhầm đè thành viên.
-  if (keyInput.value) loadSetup().catch(() => {});
+  if (keyInput.value) {
+    loadSetup().catch((error) => {
+      const msg = String(error.message || "");
+      if (msg.toLowerCase().includes("secret")) {
+        localStorage.removeItem("badminton_admin_key");
+        keyInput.value = "";
+        result.textContent =
+          "Mật khẩu quản trị không đúng hoặc đã thay đổi nên không tải được cấu hình.\nHãy đăng nhập lại ở trang /admin rồi mở lại trang này (dữ liệu ngân hàng vẫn an toàn).";
+      } else {
+        result.textContent = "Không tải được cấu hình: " + msg;
+      }
+    });
+  } else {
+    result.textContent = "Hãy đăng nhập ở trang /admin trước, hoặc nhập admin key rồi bấm 'Tải cấu hình'.";
+  }
 
   async function loadSetup() {
     result.textContent = "Đang tải cấu hình...";
