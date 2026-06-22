@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cấu hình đội cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Cấu hình đội</h1>
+            <p>Thay danh sách thành viên và bảng giá sau khi deploy</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/admin/import">Nhập buổi</a>
+          <a href="/ke-toan">Kế toán</a>
+        </nav>
+      </header>
+
+      <section class="notice">
+        Dùng cùng admin key với trang nhập buổi. Loại đóng hợp lệ: <strong>monthly</strong>, <strong>half_month</strong>, <strong>guest</strong>.
+      </section>
+
+      <form id="setup-form" class="grid two-col" style="margin-top:12px">
+        <section class="panel">
+          <div class="panel-header"><h2>Bảng giá</h2></div>
+          <div class="panel-body form-grid">
+            <div class="field full">
+              <label for="setup-key">Admin key</label>
+              <input id="setup-key" type="password" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="monthly-fee">Cố định tháng</label>
+              <input id="monthly-fee" type="number" min="0" step="1000" required />
+            </div>
+            <div class="field">
+              <label for="half-month-fee">Cố định nửa tháng</label>
+              <input id="half-month-fee" type="number" min="0" step="1000" required />
+            </div>
+            <div class="field">
+              <label for="guest-male-fee">Vãng lai nam</label>
+              <input id="guest-male-fee" type="number" min="0" step="1000" required />
+            </div>
+            <div class="field">
+              <label for="guest-female-fee">Vãng lai nữ</label>
+              <input id="guest-female-fee" type="number" min="0" step="1000" required />
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap" class="full">
+              <button id="load-setup" class="secondary" type="button">Tải cấu hình</button>
+              <button class="primary" type="submit">Lưu cấu hình</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Thành viên CSV</h2></div>
+          <div class="panel-body grid">
+            <div class="field">
+              <label for="members-csv">code,name,gender,membership_type,active</label>
+              <textarea id="members-csv" spellcheck="false" required></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" style="grid-column:1 / -1">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="result" class="result">Chưa có dữ liệu.</div>
+          </div>
+        </section>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

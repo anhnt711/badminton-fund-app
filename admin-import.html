@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nhập buổi từ ảnh</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Nhập buổi từ ảnh</h1>
+            <p>Dán JSON đã được AI chuẩn hóa rồi lưu vào database</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/ke-toan">Kế toán</a>
+        </nav>
+      </header>
+
+      <section class="notice">
+        Link này dùng key bí mật. Luồng tối giản: bạn gửi ảnh danh sách + tiền kèo, AI trả JSON, người có link dán JSON vào đây và bấm lưu.
+      </section>
+
+      <form id="import-form" class="grid two-col" style="margin-top:12px">
+        <section class="panel">
+          <div class="panel-header"><h2>Dữ liệu buổi</h2></div>
+          <div class="panel-body grid">
+            <div class="field">
+              <label for="admin-key">Admin key</label>
+              <input id="admin-key" type="password" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="import-json">JSON import</label>
+              <textarea id="import-json" spellcheck="false" required></textarea>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button id="dry-run" class="secondary" type="button">Kiểm tra</button>
+              <button class="primary" type="submit">Lưu buổi</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="result" class="result">Chưa có dữ liệu.</div>
+          </div>
+        </section>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quỹ đội cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Quỹ đội cầu lông</h1>
+            <p>Công nợ, quỹ kèo và thu chi công khai</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+          <a href="/ke-toan">Kế toán</a>
+        </nav>
+      </header>
+
+      <section class="toolbar">
+        <div class="field">
+          <label for="month">Tháng</label>
+          <input id="month" type="month" />
+        </div>
+        <button id="reload" class="secondary" type="button">Tải lại</button>
+      </section>
+
+      <div id="dashboard"></div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kế toán đội cầu lông</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/assets/court-mark.svg" alt="" />
+          <div>
+            <h1>Kế toán đội</h1>
+            <p>Nhập khoản thu, chi, đóng tiền và chi phí phát sinh</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Dashboard</a>
+        </nav>
+      </header>
+
+      <section class="notice">
+        Không cần đăng nhập. Ai có link chứa key kế toán thì nhập được thu chi, vì vậy chỉ gửi link cho người phụ trách.
+      </section>
+
+      <form id="accounting-form" class="grid two-col" style="margin-top:12px">
+        <section class="panel">
+          <div class="panel-header"><h2>Nhập thu chi</h2></div>
+          <div class="panel-body form-grid">
+            <div class="field full">
+              <label for="accountant-key">Kế toán key</label>
+              <input id="accountant-key" type="password" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="tx-date">Ngày</label>
+              <input id="tx-date" name="date" type="date" required />
+            </div>
+            <div class="field">
+              <label for="tx-type">Loại</label>
+              <select id="tx-type" name="type" required>
+                <option value="Thu">Thu</option>
+                <option value="Chi">Chi</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tx-member">Thành viên</label>
+              <input id="tx-member" name="member" placeholder="Tên hoặc mã, bỏ trống nếu là khoản chi chung" />
+            </div>
+            <div class="field">
+              <label for="tx-amount">Số tiền</label>
+              <input id="tx-amount" name="amount" type="number" min="1" step="1000" required />
+            </div>
+            <div class="field full">
+              <label for="tx-category">Nội dung</label>
+              <input id="tx-category" name="category" placeholder="Đóng tiền tháng, tiền sân, mua cầu..." required />
+            </div>
+            <div class="field full">
+              <label for="tx-note">Ghi chú</label>
+              <input id="tx-note" name="note" />
+            </div>
+            <div class="full">
+              <button class="primary" type="submit">Lưu thu chi</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2>Kết quả</h2></div>
+          <div class="panel-body">
+            <div id="result" class="result">Chưa có dữ liệu.</div>
+          </div>
+        </section>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

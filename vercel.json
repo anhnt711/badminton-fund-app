@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin/import",
+      "destination": "/admin-import.html"
+    },
+    {
+      "source": "/admin/setup",
+      "destination": "/admin-setup.html"
+    },
+    {
+      "source": "/ke-toan",
+      "destination": "/accounting.html"
+    }
+  ]
+}
