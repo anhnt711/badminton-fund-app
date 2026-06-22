@@ -92,14 +92,14 @@ async function loadDashboard() {
             <small>${totals.debtors} người còn nợ</small>
           </div>
           <div class="overview-card">
-            <span>Đã thu</span>
+            <span>Đã thu tháng này</span>
             <strong>${formatMoney(totals.totalPaid)}</strong>
             <small>Trong tháng đang xem</small>
           </div>
           <div class="overview-card">
-            <span>Quỹ tháng này</span>
+            <span>Quỹ hiện có</span>
             <strong>${formatMoney(totals.fundBalance)}</strong>
-            <small>Thu - chi</small>
+            <small>Tổng thu - chi đến nay</small>
           </div>
         </div>
       </section>
@@ -167,15 +167,15 @@ function memberPaymentPanel(row, rows, payment, month) {
           </select>
         </div>
         <div>
-          <p class="eyebrow">Số tiền bạn cần chuyển</p>
+          <p class="eyebrow">Tổng tiền bạn cần đóng (đã gồm nợ cũ)</p>
           <div class="debt-amount ${debt > 0 ? "" : "paid"}">${formatMoney(debt)}</div>
-          <p class="payment-note">${debt > 0 ? "Quét QR hoặc copy số tiền & nội dung bên dưới để chuyển khoản." : "🎉 Bạn đã đóng đủ trong tháng này."}</p>
+          <p class="payment-note">${debt > 0 ? "Quét QR hoặc copy số tiền & nội dung bên dưới để chuyển khoản." : "🎉 Bạn đã đóng đủ, không còn nợ."}</p>
         </div>
         <dl class="debt-breakdown">
-          <div><dt>Cố định</dt><dd>${formatMoney(row?.fixedDue || 0)}</dd></div>
-          <div><dt>Phí buổi</dt><dd>${formatMoney(row?.sessionDue || 0)}</dd></div>
-          <div><dt>Quỹ kèo</dt><dd>${formatMoney(row?.potDue || 0)}</dd></div>
-          <div class="paid-cell"><dt>Đã đóng</dt><dd>${formatMoney(row?.paid || 0)}</dd></div>
+          <div><dt>Nợ kỳ trước</dt><dd>${formatMoney(Math.max(0, row?.prevBalance || 0))}</dd></div>
+          <div><dt>Cố định tháng</dt><dd>${formatMoney(row?.monthFixed || 0)}</dd></div>
+          <div><dt>Phí buổi + kèo</dt><dd>${formatMoney((row?.monthSession || 0) + (row?.monthPot || 0))}</dd></div>
+          <div class="paid-cell"><dt>Đã đóng tháng này</dt><dd>${formatMoney(row?.monthPaid || 0)}</dd></div>
         </dl>
         <div class="quick-copy">
           <button class="primary" type="button" data-copy="${copyAttr(debt)}">Copy số tiền</button>
