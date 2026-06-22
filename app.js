@@ -75,8 +75,13 @@ async function loadDashboard() {
     root.innerHTML = `<div class="empty">Đang tải...</div>`;
     const payload = await requestJson(`/api/public-data?month=${monthInput.value}`);
     const { totals, balances, sessions, transactions, payment } = payload.data;
-    const selectedId = localStorage.getItem("badminton_selected_member");
-    const selectedMember = balances.find((row) => row.id === selectedId) || balances.find((row) => row.balance > 0) || balances[0];
+    const storedCode = localStorage.getItem("badminton_member_code");
+    const storedId = localStorage.getItem("badminton_selected_member");
+    const selectedMember =
+      balances.find((row) => row.code === storedCode) ||
+      balances.find((row) => row.id === storedId) ||
+      balances.find((row) => row.balance > 0) ||
+      balances[0];
     root.innerHTML = `
       <section class="hero-dashboard">
         ${memberPaymentPanel(selectedMember, balances, payment, monthInput.value)}
@@ -158,7 +163,7 @@ function memberPaymentPanel(row, rows, payment, month) {
           <label for="member-select">👇 Chọn tên của bạn để xem công nợ</label>
           <input id="member-search" type="search" placeholder="Gõ tên để tìm nhanh..." autocomplete="off" />
           <select id="member-select">
-            ${rows.map((item) => `<option value="${item.id}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} — còn nợ ${formatMoney(item.balance)}</option>`).join("")}
+            ${rows.map((item) => `<option value="${item.id}" data-code="${escapeHtml(item.code)}" ${selected(item.id, row?.id)}>${escapeHtml(item.name)} — còn nợ ${formatMoney(item.balance)}</option>`).join("")}
           </select>
         </div>
         <div>
@@ -233,6 +238,8 @@ function bindDashboardActions(root) {
   const memberSelect = root.querySelector("#member-select");
   memberSelect?.addEventListener("change", (event) => {
     localStorage.setItem("badminton_selected_member", event.target.value);
+    const code = event.target.selectedOptions[0]?.dataset.code;
+    if (code) localStorage.setItem("badminton_member_code", code);
     loadDashboard();
   });
 
